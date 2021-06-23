@@ -31,15 +31,17 @@ bool check(const char *word)
 {
     int hashNum = hash(word);
     
-    node* tempNode = table[hashNum];
+    node *tempNode = table[hashNum];
     
-    while(!tempNode)
+    while (tempNode)
     {
-        if(strcasecmp(tempNode -> word, word) == 0)
+        int test = strcasecmp(tempNode->word, word);
+        
+        if (test == 0)
         {
             return true;
         }
-        tempNode = tempNode -> next;
+        tempNode = tempNode->next;
     }
     return false;
 }
@@ -49,9 +51,9 @@ unsigned int hash(const char *word)
 {
     int hashNum = 0;
     
-    for(int i = 0; word[i] != '\0'; i++)
+    for (int i = 0; word[i] != '\0'; i++)
     {
-        hashNum += tolower(word[i]);
+        hashNum = hashNum + toupper(word[i]);
     }
     
     return hashNum % N;
@@ -60,39 +62,38 @@ unsigned int hash(const char *word)
 // Loads dictionary into memory, returning true if successful else false
 bool load(const char *dictionary)
 {
-    FILE* fileToRead = fopen(dictionary, "r");
-    if(!fileToRead) 
+    // make sure dictionary file exists and load it
+    FILE *fileToRead = fopen(dictionary, "r");
+    if (!fileToRead) 
     {
         return false;
     }
     
-    for(int i = 0; i < N; i++)
-    {
-        table[i] = NULL;
-    }
-    
+    // load first word into memory
     char thisWord[LENGTH + 1];
+    int readComplete = fscanf(fileToRead, "%s\n", thisWord);
     
-    while(fscanf(fileToRead, "%s\n", thisWord) != EOF)
+    // hash the word and place it in its list location, then load the next word
+    while (readComplete != EOF)
     {
-        node* thisNode = malloc(sizeof(node));
+        // build the node
+        node *thisNode = malloc(sizeof(node));
+        if (thisNode == NULL)
+        {
+            return false;
+        }
         
-        strcpy(thisNode -> word, thisWord);
+        // fill the node with its word
+        strcpy(thisNode->word, thisWord);
+        thisNode->next = NULL;
         
+        // get hash for this word, then set the current hash bucket
         int hashKey = hash(thisWord);
-        
-        if(!table[hashKey])
-        {
-            thisNode -> next = NULL;
-            table[hashKey] = thisNode;
-        }
-        else
-        {
-            thisNode -> next = table[hashKey];
-            table[hashKey] = thisNode;
-        }
+        thisNode->next = table[hashKey];
+        table[hashKey] = thisNode;
         
         wordCounter++;
+        readComplete = fscanf(fileToRead, "%s\n", thisWord);
     }
     
     fclose(fileToRead);
@@ -108,13 +109,13 @@ unsigned int size(void)
 // Unloads dictionary from memory, returning true if successful else false
 bool unload(void)
 {
-    for(int i = 0; i < N; i++)
+    for (int i = 0; i < N; i++)
     {
-        node* tempNode = table[i];
+        node *tempNode = table[i];
         
-        while(tempNode)
+        while (tempNode)
         {
-            node* toDelete = tempNode;
+            node *toDelete = tempNode;
             tempNode = tempNode -> next;
             free(toDelete);
         }
